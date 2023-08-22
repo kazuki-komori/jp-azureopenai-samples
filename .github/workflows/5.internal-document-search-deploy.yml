@@ -3,9 +3,12 @@ name: '5.internal-document-search-deployment'
 on: [push]
 
 jobs:
-  setup:
+  deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Login azure
         uses: azure/login@v1
         with:
@@ -17,26 +20,14 @@ jobs:
         with:
           inlineScript: |
             $ENV:SUB = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+            $ENV:USER_ID = "${{ secrets.AZURE_USER_ID }}"
             $ENV:AZURE_PRINCEPAL_ID = az ad user show --id $ENV:USER_ID -o tsv --query id
-          azPSVersion: "latest"
-  
-  deploy:
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - name: Login azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }} 
-          enable-AzPSSession: true
-          
-      - name: test az login status
-        run: az account show
+            $ENV:LOC = "${{ secrets.AZURE_LOCATION }}"
+            $ENV:DEP_NAME = "github-actions-deploy"
+            $ENV:AZURE_ENV_NAME = "$GITHUB_RUN_ID"
 
-      - name: check powershell env
-        uses: azure/powershell@v1
-        with:
-          inlineScript: |
-            $ENV:SUB
+            cd 5.internal-document-search/infra
+            az deployment sub create --name $ENV:DEP_NAME --location $ENV:LOC --template-file main.bicep --parameters principalId=$ENV:AZURE_PRINCIPAL_ID environmentName=$ENV:AZURE_ENV_NAME location=$ENV:LOC
           azPSVersion: "latest"
+      
       
