@@ -21,7 +21,7 @@ jobs:
           inlineScript: |
             $ENV:SUB = "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
             $ENV:USER_ID = "${{ secrets.AZURE_USER_ID }}"
-            $ENV:AZURE_PRINCEPAL_ID = ${{ secrets.AZURE_OBJECT_ID }}
+            $ENV:AZURE_PRINCEPAL_ID = "${{ secrets.AZURE_OBJECT_ID }}""
             $ENV:LOC = "${{ secrets.AZURE_LOCATION }}"
             $ENV:DEP_NAME = "github-actions-deploy"
             $ENV:AZURE_ENV_NAME = "github-actions-test"
