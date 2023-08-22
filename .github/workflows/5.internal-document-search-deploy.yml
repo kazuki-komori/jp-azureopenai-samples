@@ -24,6 +24,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup
     steps:
+      - name: Login azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }} 
+          enable-AzPSSession: true
+          
       - name: test az login status
         run: az account show
 
