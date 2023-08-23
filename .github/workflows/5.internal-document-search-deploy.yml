@@ -27,9 +27,10 @@ jobs:
             $ENV:AZURE_ENV_NAME = "github-actions-test-${{ github.run_id }}"
             $ENV:BACKEND_SERVICE_NAME = "app-backend-${{ github.run_id }}"
             $ENV:APP_SERVICE_PLAN_NAME = "plan-${{ github.run_id }}"
+            $ENV:AZURE_COSMOSDB_ACCOUNT = "cosmos-${{ github.run_id }}"
 
             cd 5.internal-document-search/infra
-            az deployment sub create --name $ENV:DEP_NAME --location $ENV:LOC --template-file main.bicep --parameters principalId=$ENV:AZURE_PRINCIPAL_ID environmentName=$ENV:AZURE_ENV_NAME location=$ENV:LOC backendServiceName=$ENV:BACKEND_SERVICE_NAME appServicePlanName=$ENV:APP_SERVICE_PLAN_NAME
+            az deployment sub create --name $ENV:DEP_NAME --location $ENV:LOC --template-file main.bicep --parameters principalId=$ENV:AZURE_PRINCIPAL_ID environmentName=$ENV:AZURE_ENV_NAME location=$ENV:LOC backendServiceName=$ENV:BACKEND_SERVICE_NAME appServicePlanName=$ENV:APP_SERVICE_PLAN_NAME cosmosDbAccountName=$ENV:AZURE_COSMOSDB_ACCOUNT
           azPSVersion: "latest"
 
       - name: Build frontend
@@ -42,7 +43,6 @@ jobs:
         run: |
           cd 5.internal-document-search/src/backend
           zip -r app.zip .
-          
 
       - name: Deploy to App Service
         uses: azure/powershell@v1
@@ -54,12 +54,64 @@ jobs:
             cd 5.internal-document-search/src/backend
             az webapp deployment source config-zip --resource-group $ENV:AZURE_WEBAPP_RESOURCE_GROUP --name $ENV:WEBAPP_NAME --src ./app.zip
           azPSVersion: "latest"
+      
+      - name: Assgin RBAC to CosmosDB
+        uses: azure/powershell@v1
+        with:
+          inlineScript: |
+            $ENV:RESOURCE_GROUP_NAME = "rg-github-actions-test-${{ github.run_id }}"
+            $ENV:BACKEND_SERVICE_NAME = "app-backend-${{ github.run_id }}"
+            $ENV:AZURE_COSMOSDB_ACCOUNT = "cosmos-${{ github.run_id }}"
+              
+            $ENV:BACKEND_IDENTITY_PRINCIPAL_ID = az webapp identity show --name $ENV:BACKEND_SERVICE_NAME --resource-group $ENV:RESOURCE_GROUP_NAME --query principalId
 
-  # test-openai-status:
-  #   needs: deploy
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: test /chat endpoint
+            cd 5.internal-document-search
+            $roleId = az cosmosdb sql role definition create --account-name $ENV:AZURE_COSMOSDB_ACCOUNT --resource-group $ENV:RESOURCE_GROUP_NAME --body ./scripts/cosmosreadwriterole.json --output tsv --query id
+
+            az cosmosdb sql role assignment create --account-name $ENV:AZURE_COSMOSDB_ACCOUNT --resource-group $ENV:RESOURCE_GROUP_NAME --scope / --principal-id $ENV:BACKEND_IDENTITY_PRINCIPAL_ID --role-definition-id $roleId
+
+          azPSVersion: "latest"
+  
+
+  wait-for-1min:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for 1 min
+        run: |
+          sleep 60
+
+
+  test-openai-status:
+    needs: wait-for-1min
+    runs-on: ubuntu-latest
+    steps:
+      - name: test /chat endpoint
+        id: test-openai-status
+        run: |
+          response=$(curl -X POST "https://app-backend-5947309960.azurewebsites.net/chat" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "approach": "r",
+              "history": [
+                {
+                  "user": "test",
+                  "assistant": "This is a test response from an AI language model. How may I assist you?"
+                }
+              ],
+              "assistant": "This is a test response from an AI language model. How may I assist you?",
+              "user": "test",
+              "overrides": {
+                "gptModel": "gpt-3.5-turbo",
+                "temperature": "0.0",
+                "systemPrompt": ""
+              },
+              "gptModel": "gpt-3.5-turbo",
+              "systemPrompt": "",
+              "temperature": "0.0"
+            }')
+          
+          echo "$response"
 
       
       

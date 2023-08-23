@@ -51,6 +51,7 @@ param chatGptModelName string = 'gpt-35-turbo'
 
 param cosmosDbDatabaseName string = 'ChatHistory'
 param cosmosDbContainerName string = 'Prompts'
+param cosmosDbAccountName string = ''
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -86,7 +87,7 @@ module cosmosDb 'core/db/cosmosdb.bicep' = {
   name: 'cosmosdb'
   scope: resourceGroup
   params: {
-    name: '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
+    name: !empty(cosmosDbAccountName) ? cosmosDbAccountName : '${abbrs.documentDBDatabaseAccounts}${resourceToken}'
     location: location
     tags: union(tags, { 'azd-service-name': 'cosmosdb' })
     cosmosDbDatabaseName: cosmosDbDatabaseName
