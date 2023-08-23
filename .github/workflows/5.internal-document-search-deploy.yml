@@ -71,6 +71,8 @@ jobs:
             cd 5.internal-document-search
             $roleId = az cosmosdb sql role definition create --account-name $ENV:AZURE_COSMOSDB_ACCOUNT --resource-group $ENV:RESOURCE_GROUP_NAME --body ./scripts/cosmosreadwriterole.json --output tsv --query id
 
+            echo "roleId=$roleId" >> $GITHUB_ENV
+
             az cosmosdb sql role assignment create --account-name $ENV:AZURE_COSMOSDB_ACCOUNT --resource-group $ENV:RESOURCE_GROUP_NAME --scope / --principal-id $ENV:BACKEND_IDENTITY_PRINCIPAL_ID --role-definition-id $roleId
 
           azPSVersion: "latest"
@@ -90,6 +92,9 @@ jobs:
             $env:AZURE_SEARCH_SERVICE = "gptkb-${{ github.run_id }}"
             $env:AZURE_SEARCH_INDEX = "gptkbindex"
             $env:AZURE_FORMRECOGNIZER_SERVICE = "cog-fr-${{ github.run_id }}"
+            $env:AZURE_PRINCIPAL_ID = "${{ secrets.AZURE_OBJECT_ID }}"
+            $env:AZURE_COSMOSDB_ACCOUNT = "cosmos-${{ github.run_id }}"
+            $roleId = "${{env.roleId}}"
             
             $key = az search admin-key show -g $env:RESOURCE_GROUP_NAME --service-name $env:AZURE_SEARCH_SERVICE | ConvertFrom-Json
             $env:AZURE_SEARCH_KEY = $key.primaryKey
@@ -97,9 +102,9 @@ jobs:
             $key = az cognitiveservices account keys list -n $env:AZURE_FORMRECOGNIZER_SERVICE -g $env:RESOURCE_GROUP_NAME | ConvertFrom-Json
             $env:AZURE_FORMRECOGNIZER_KEY = $key.key1
 
+            cd 5.internal-document-search
             az cosmosdb sql role assignment create --account-name $env:AZURE_COSMOSDB_ACCOUNT --resource-group $env:RESOURCE_GROUP_NAME --scope / --principal-id $env:AZURE_PRINCIPAL_ID --role-definition-id $roleId
 
-            cd 5.internal-document-search
 
             $pythonCmd = Get-Command python -ErrorAction SilentlyContinue
             if (-not $pythonCmd) {
