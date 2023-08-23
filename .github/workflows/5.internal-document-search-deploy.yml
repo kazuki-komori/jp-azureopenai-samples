@@ -42,6 +42,7 @@ jobs:
         run: |
           cd 5.internal-document-search/src/backend
           zip -r app.zip .
+          
 
       - name: Deploy to App Service
         uses: azure/powershell@v1
