@@ -41,7 +41,7 @@ jobs:
       - name: Build Backend
         run: |
           cd 5.internal-document-search/src/backend
-          zip -r backend.zip .
+          zip -r app.zip .
 
       - name: Deploy to App Service
         uses: azure/powershell@v1
