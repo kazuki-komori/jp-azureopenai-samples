@@ -23,11 +23,35 @@ jobs:
             $ENV:USER_ID = "${{ secrets.AZURE_USER_ID }}"
             $ENV:AZURE_PRINCIPAL_ID = "${{ secrets.AZURE_OBJECT_ID }}"
             $ENV:LOC = "${{ secrets.AZURE_LOCATION }}"
-            $ENV:DEP_NAME = "github-actions-deploy-${{ github.run_id}}"
-            $ENV:AZURE_ENV_NAME = "github-actions-test-${{ github.run_id}}"
+            $ENV:DEP_NAME = "github-actions-deploy-${{ github.run_id }}"
+            $ENV:AZURE_ENV_NAME = "github-actions-test-${{ github.run_id }}"
+            $ENV:BACKEND_SERVICE_NAME = "app-backend-${{ github.run_id }}"
 
             cd 5.internal-document-search/infra
-            az deployment sub create --name $ENV:DEP_NAME --location $ENV:LOC --template-file main.bicep --parameters principalId=$ENV:AZURE_PRINCIPAL_ID environmentName=$ENV:AZURE_ENV_NAME location=$ENV:LOC
+            az deployment sub create --name $ENV:DEP_NAME --location $ENV:LOC --template-file main.bicep --parameters principalId=$ENV:AZURE_PRINCIPAL_ID environmentName=$ENV:AZURE_ENV_NAME location=$ENV:LOC backendServiceName=$ENV:BACKEND_SERVICE_NAME
           azPSVersion: "latest"
+
+      - name: Build frontend
+        run: |
+          cd 5.internal-document-search/src/frontend
+          npm install
+          npm run build
+      
+      - name: Build Backend
+        run: |
+          cd 5.internal-document-search/src/backend
+          zip -r backend.zip .
+
+      - name: Deploy to App Service
+        uses: azure/powershell@v1
+        with:
+          inlineScript: |
+            $ENV:AZURE_WEBAPP_RESOURCE_GROUP = "rg-github-actions-test-${{ github.run_id }}"
+            $ENV:WEBAPP_NAME = "app-backend-${{ github.run_id }}"
+
+            az webapp deployment source config-zip --resource-group $ENV:AZURE_WEBAPP_RESOURCE_GROUP --name $ENV:WEBAPP_NAME --src ./app.zip
+          azPSVersion: "latest"
+
+      
       
       
