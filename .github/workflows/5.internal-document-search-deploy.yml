@@ -15,7 +15,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }} 
           enable-AzPSSession: true
       
-      - name: Set up Azure PowerShell
+      - name: Deploy Azure Resources
         uses: azure/powershell@v1
         with:
           inlineScript: |
@@ -50,8 +50,15 @@ jobs:
             $ENV:AZURE_WEBAPP_RESOURCE_GROUP = "rg-github-actions-test-${{ github.run_id }}"
             $ENV:WEBAPP_NAME = "app-backend-${{ github.run_id }}"
 
+            cd 5.internal-document-search/src/backend
             az webapp deployment source config-zip --resource-group $ENV:AZURE_WEBAPP_RESOURCE_GROUP --name $ENV:WEBAPP_NAME --src ./app.zip
           azPSVersion: "latest"
+
+  # test-openai-status:
+  #   needs: deploy
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: test /chat endpoint
 
       
       
