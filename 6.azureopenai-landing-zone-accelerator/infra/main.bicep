@@ -148,7 +148,7 @@ module apim './core/gateway/apim.bicep' = {
     name: !empty(apimServiceName) ? apimServiceName : '${abbrs.apiManagementService}${resourceToken}'
     location: location
     tags: tags
-    sku: 'Standard'
+    sku: 'StandardV2'
     skuCount: 1
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     workspaceId: monitoring.outputs.logAnalyticsWorkspaceId
