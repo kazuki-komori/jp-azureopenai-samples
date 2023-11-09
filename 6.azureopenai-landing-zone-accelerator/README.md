@@ -182,3 +182,10 @@ Azure OpenAIでは各モデルごとにリクエスト回数の上限設定が�
 ```
  * backend-url-1, backend-url-2にそれぞれAzure OpenAIのエンドポイントを設定してください
  * 両方のAzure OpenAIに対してAPI ManagementのManaged Idが ``Cognitive Services OpenAI User`` 以上のロールを持っていることをご確認ください
+
+## API Management V2への移行
+
+`./core/gateway/apim.bicep` の `sku` に `BasicV2` / `StandardV2`、 `api-version` に `Microsoft.ApiManagement/service@2023-03-01-preview` を指定してください。
+
+API Management V2では、デプロイ時間が短縮されるほか、VNet 統合が Standardプランでサポートされます。
+詳細については [新しい Azure API Management レベル (プレビュー)](https://learn.microsoft.com/ja-jp/azure/api-management/v2-service-tiers-overview) をご確認ください。
